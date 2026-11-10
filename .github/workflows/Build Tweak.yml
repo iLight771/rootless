@@ -16,7 +16,7 @@ jobs:
           submodules: recursive
 
       - name: Setup Theos
-        uses: theos/theos-action@v1
+        uses: Randomblock1/theos-action@v1
 
       - name: Setup GNU Make
         run: echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
