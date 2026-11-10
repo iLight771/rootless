@@ -1,9 +1,0 @@
-Package: com.magsafelighting.tweak
-Name: MagSafeLighting
-Version: 0.1.0
-Architecture: iphoneos-arm
-Description: MagSafe-style charging animation for Lightning charging.
-Maintainer: MagSafeLighting
-Author: MagSafeLighting
-Section: Tweaks
-Depends: firmware (>= 15.0)
