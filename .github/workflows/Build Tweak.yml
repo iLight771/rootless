@@ -16,26 +16,13 @@ jobs:
           submodules: recursive
 
       - name: Setup Theos
-        run: |
-          export THEOS=$HOME/theos
-          git clone --recursive https://github.com/theos/theos.git $THEOS
-          
-          # Скачиваем SDK с официального репозитория и принудительно даем права
-          mkdir -p $THEOS/sdks
-          curl -L https://github.com/theos/sdks/archive/master.zip -o sdk.zip
-          unzip -q sdk.zip -d $THEOS/sdks
-          mv $THEOS/sdks/sdks-master/* $THEOS/sdks/
-          rm -rf $THEOS/sdks/sdks-master sdk.zip
-          
-          # Даем полные права на папку с Theos, чтобы избежать ошибок доступа
-          chmod -R 755 $THEOS
+        uses: theos/theos-action@v1
 
       - name: Setup GNU Make
         run: echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
 
       - name: Build Package
         run: |
-          export THEOS=$HOME/theos
           make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
 
       - name: Upload Deb
