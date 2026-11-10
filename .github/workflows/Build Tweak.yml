@@ -2,13 +2,12 @@ name: Build Tweak
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
-  workflow_dispatch: # Позволяет запускать сборку вручную
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-latest # Theos лучше всего работает на macOS
+    runs-on: macos-latest
 
     steps:
       - name: Checkout code
@@ -17,20 +16,22 @@ jobs:
           submodules: recursive
 
       - name: Setup Theos
-        uses: Randomblock1/theos-action@v1 # Готовый экшен для установки Theos
-        with:
-          theos-dir: 'theos'
+        run: |
+          export THEOS=$HOME/theos
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+          # Качаем официальный SDK для iOS
+          curl -L https://github.com/theos/sdks/archive/master.zip -o sdk.zip
+          unzip -q sdk.zip -d $THEOS/sdks
+          mv $THEOS/sdks/sdks-master/* $THEOS/sdks/
+          rm -rf $THEOS/sdks/sdks-master sdk.zip
 
       - name: Setup GNU Make
         run: echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
 
       - name: Build Package
         run: |
-          # Сборка под rootless (современные джейлбрейки)
+          export THEOS=$HOME/theos
           make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
-          
-          # (Опционально) Сборка под rootful, если нужно
-          # make clean package FINALPACKAGE=1
 
       - name: Upload Deb
         uses: actions/upload-artifact@v4
