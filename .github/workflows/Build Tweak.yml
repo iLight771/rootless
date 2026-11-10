@@ -17,12 +17,26 @@ jobs:
 
       - name: Setup Theos
         uses: Randomblock1/theos-action@v1
+        with:
+          theos-dir: 'theos'
+
+      - name: Fix SDK Installation
+        run: |
+          export THEOS=$GITHUB_WORKSPACE/theos
+          # Удаляем кривой SDK, если он успел скачаться
+          rm -rf $THEOS/sdks
+          # Ставим официальный менеджер пакетов от Theos
+          git clone https://github.com/theos/dm.pl.git $THEOS/bin/dm.pl
+          chmod +x $THEOS/bin/dm.pl
+          # Скачиваем SDK через официальный менеджер (обходит баг с правами)
+          $THEOS/bin/dm.pl install sdk
 
       - name: Setup GNU Make
         run: echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
 
       - name: Build Package
         run: |
+          export THEOS=$GITHUB_WORKSPACE/theos
           make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
 
       - name: Upload Deb
