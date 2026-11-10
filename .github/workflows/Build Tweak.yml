@@ -1,0 +1,39 @@
+name: Build Tweak
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch: # Позволяет запускать сборку вручную
+
+jobs:
+  build:
+    runs-on: macos-latest # Theos лучше всего работает на macOS
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Theos
+        uses: Randomblock1/theos-action@v1 # Готовый экшен для установки Theos
+        with:
+          theos-dir: 'theos'
+
+      - name: Setup GNU Make
+        run: echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
+
+      - name: Build Package
+        run: |
+          # Сборка под rootless (современные джейлбрейки)
+          make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
+          
+          # (Опционально) Сборка под rootful, если нужно
+          # make clean package FINALPACKAGE=1
+
+      - name: Upload Deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: tweak-deb
+          path: packages/*.deb
