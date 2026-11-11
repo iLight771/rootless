@@ -16,20 +16,16 @@ jobs:
           submodules: recursive
 
       - name: Setup Theos
-        uses: Randomblock1/theos-action@v1
-        with:
-          theos-dir: 'theos'
-
-      - name: Fix SDK Installation
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
-          # Удаляем кривой SDK, если он успел скачаться
-          rm -rf $THEOS/sdks
-          # Ставим официальный менеджер пакетов от Theos
-          git clone https://github.com/theos/dm.pl.git $THEOS/bin/dm.pl
-          chmod +x $THEOS/bin/dm.pl
-          # Скачиваем SDK через официальный менеджер (обходит баг с правами)
-          $THEOS/bin/dm.pl install sdk
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+          
+          # Скачиваем SDK через официальный репозиторий, НО с флагом -a (archive mode)
+          # Это сохранит символические ссылки и не сломает права доступа
+          curl -L https://github.com/theos/sdks/archive/refs/heads/master.tar.gz | tar -xz -C $THEOS/sdks --strip-components=1
+          
+          # Даем права на всякий случай
+          chmod -R 755 $THEOS/sdks
 
       - name: Setup GNU Make
         run: echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
