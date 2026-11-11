@@ -68,23 +68,11 @@
 static UIWindow *mlWindow;
 static MLOverlayView *mlView;
 
-static BOOL MLIsLocked(void) {
-    Class cls = NSClassFromString(@"SBLockScreenManager");
-    if (!cls) return NO;
-
-    SEL shared = NSSelectorFromString(@"sharedInstance");
-    SEL locked = NSSelectorFromString(@"isUILocked");
-
-    if (![cls respondsToSelector:shared]) return NO;
-
-    id manager = ((id (*)(id, SEL))objc_msgSend)(cls, shared);
-    if (![manager respondsToSelector:locked]) return NO;
-
-    return ((BOOL (*)(id, SEL))objc_msgSend)(manager, locked);
-}
+// Временно убираем проверку блокировки для теста!
+// static BOOL MLIsLocked(void) { ... } 
 
 static void MLShowAnimation(void) {
-    if (!MLIsLocked()) return;
+    NSLog(@"[MagSafe] Show animation triggered"); // Для отладки
 
     dispatch_async(dispatch_get_main_queue(), ^{
         if (!mlWindow) {
@@ -93,8 +81,7 @@ static void MLShowAnimation(void) {
             mlWindow.windowLevel = UIWindowLevelAlert + 5;
             mlWindow.userInteractionEnabled = NO;
 
-            UIViewController *controller =
-                [UIViewController new];
+            UIViewController *controller = [UIViewController new];
             controller.view.backgroundColor = UIColor.clearColor;
             mlWindow.rootViewController = controller;
 
@@ -144,19 +131,27 @@ static void MLStart(void) {
         addObserverForName:UIDeviceBatteryStateDidChangeNotification
         object:nil queue:NSOperationQueue.mainQueue
         usingBlock:^(NSNotification *note) {
-            if (device.batteryState == UIDeviceBatteryStateCharging) {
+            if (device.batteryState == UIDeviceBatteryStateCharging ||
+                device.batteryState == UIDeviceBatteryStateFull) {
                 MLShowAnimation();
             }
         }];
+        
+    // Если телефон уже на зарядке при запуске твика
+    if (device.batteryState == UIDeviceBatteryStateCharging) {
+        MLShowAnimation();
+    }
 }
 
+// Обязательный хук для Theos
+%hook SpringBoard
+%end
+
 %ctor {
-    if ([NSBundle.mainBundle.bundleIdentifier
-         isEqualToString:@"com.apple.springboard"]) {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW,
-            (int64_t)(2 * NSEC_PER_SEC)),
-            dispatch_get_main_queue(), ^{
-                MLStart();
-            });
-    }
+    // Запускаем через 3 секунды после старта SpringBoard
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW,
+        (int64_t)(3 * NSEC_PER_SEC)),
+        dispatch_get_main_queue(), ^{
+            MLStart();
+        });
 }
