@@ -19,24 +19,19 @@ jobs:
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
           git clone --recursive https://github.com/theos/theos.git $THEOS
-          
-          # Скачиваем SDK (архив tar.gz, чтобы не было ошибок прав)
           curl -L https://github.com/theos/sdks/archive/refs/heads/master.tar.gz | tar -xz -C $THEOS/sdks --strip-components=1
-          
-          # Скачиваем ldid (утилиту для подписи)
-          curl -L https://github.com/ProcursusTeam/ldid/releases/latest/download/ldid_macosx_arm64 -o $THEOS/bin/ldid
-          chmod +x $THEOS/bin/ldid
-          
           chmod -R 755 $THEOS/sdks
 
       - name: Setup GNU Make
         run: echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
 
+      - name: Install ldid (via Homebrew)
+        run: brew install ldid
+
       - name: Build Package
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
-          # Принудительно указываем путь к ldid
-          make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless LDID=$THEOS/bin/ldid
+          make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
 
       - name: Upload Deb
         uses: actions/upload-artifact@v4
